@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { use, useState } from "react";
 import { Alert, StyleSheet, View, Text } from "react-native";
 import { supabase } from "../lib/supabase";
 import { Button, Input } from "@rneui/themed";
@@ -43,11 +43,16 @@ const Login = () => {
     });
 
     // if there's an error during sign in, show alert with error message(and turn off loading)
-    if (error) Alert.alert(error.message);
-    setLoading(false);
+    if (error) {
+      Alert.alert(error.message);
+      setLoading(false);
+      return; // Early return on error to avoid further processing
+    }
 
     // fetch user data from 'profiles' table after signing in (find if profile is complete)
-    fetchTableValues();
+    const fetchedUserData = await fetchTableValues();
+    handleRoutingBasedOnProfile(fetchedUserData);
+    setLoading(false);
   }
 
   // Handles users signing up with a new email and password
@@ -74,8 +79,7 @@ const Login = () => {
     }
   }
 
-  const fetchTableValues = async () => {
-
+  const fetchTableValues = async (): Promise<userData | null> => {
     try {
       // set loading to true while fetching data (disables button)
       setLoading(true);
@@ -89,41 +93,51 @@ const Login = () => {
       // if there's an error during fetching, show alert with error message
       if (error) {
         Alert.alert("Error fetching user data: " + error.message);
+        return null;
       }
 
       // if data is returned, set the userData state to the first item (there should only be one)
       if (data && data.length > 0) {
         setUserData(data[0]);
+        return data[0];
       } else {
         Alert.alert("No user data found for the provided email.");
+        return null;
       }
-
     } catch (err) {
       // catch any unexpected errors and show alert
-        Alert.alert("Error fetching user data: " + err);
+      Alert.alert("Error fetching user data: " + err);
+      return null;
     } finally {
       // turn off loading after fetching is done
       setLoading(false);
     }
   };
 
-  const handleRoutingBasedOnProfile = () => {
+  const handleRoutingBasedOnProfile = (userData: userData | null) => {
     // if userData is null, return error and stop
     if (!userData) {
-      Alert.alert("Error with routing: No userData")
-      return
+      Alert.alert("Error with routing: No userData");
+      return;
     }
 
     // check if profile is complete based on 'completed' field
     if (userData.completed) {
       // if profile is complete, navigate to main app screen
-      router.push("/homeScreen");
+      router.push({
+        pathname: "/homescreen",
+        params: { id: userData.id },
+      });
     } else {
       // if profile is incomplete, navigate to onboarding form based on completion level
-      
+      router.push({
+        pathname: "/onboardingForm",
+        params: { id: userData.id },
+      });
       // needs to be implimented(after forms are complete with known data that will be asked on each)
     }
   };
+
 
   return (
     <View style={styles.container}>

@@ -9,7 +9,7 @@ const SplashScreen = () => {
 
     const handleButtonPressed = () => {
         // Navigation is handled by the router from expo-router (use .push to navigate)
-        router.push('/onboardringForm1');
+        router.push('/login');
     };
 
     return (
