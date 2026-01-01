@@ -28,58 +28,83 @@ const Auth = () => {
   const [userData, setUserData] = useState<userData | null>(null);
 
   // Sign in existing user with email and password (like handle login)
-  // --- Logic: Sign In ---
-  async function handleSignIn() {
+  async function signInWithEmail() {
+    // fetchTableValues();
+
     setLoading(true);
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
+    const { error } = await supabase.auth.signInWithPassword({
+      email: email,
+      password: password,
     });
 
-    if (error) {
-      Alert.alert("Login Failed", error.message);
+    if (error) Alert.alert(error.message);
+    setLoading(false);
+
+    // if no error, user is signed in successfully -> bring to home screen
+
+    fetchTableValues();
+
+    //   if(!error){
+    //     router.push('/homeScreen');
+    //   }
+  }
+
+  // Sign up new user with email and password (like handle create account)
+  async function signUpWithEmail() {
+    setLoading(true);
+    const {
+      data: { session },
+      error,
+    } = await supabase.auth.signUp({
+      email: email,
+      password: password,
+    });
+
+    // see if they user has a completed profile in 'profiles' table
+
+    if (error) Alert.alert(error.message);
+    setLoading(false);
+
+    // if no error, user is signed up successfully -> bring to next form page (session is created if no error)
+    if (session) {
+      router.push("/loginNext");
+    }
+  }
+
+  const fetchTableValues = async () => {
+    console.log("Fetching user data for email:", email);
+
+    try {
+      setLoading(true);
+
+      // The .from() specifies the table name, and .select() fetches the data.
+      const { data, error } = await supabase
+        .from("profiles")
+        .select()
+        .eq("email", email); // Filter where the 'email' column equals the email entered by the user
+
+      console.log("Fetched user data:", data);
+
+      if (error) {
+        Alert.alert("Error fetching user data: " + error.message);
+      }
+
+      if (data && data.length > 0) {
+        setUserData(data[0]);
+      } else {
+        Alert.alert("No user data found for the provided email.");
+      }
+
+      if (userData && userData.completed === false) {
+        // Navigate to profile completion page (where they have to fill out) -> look for what fields are missing
+        console.log("Navigating to correct profile info form");
+      }
+    } catch (err) {
+      if (err) {
+        Alert.alert("Error fetching user data: " + err);
+      }
+    } finally {
       setLoading(false);
-      return;
-    }
-
-    if (data.user) {
-      await checkProfileStatus(data.user.id);
-    }
-    setLoading(false);
-  }
-
-  // --- Logic: Sign Up ---
-  async function handleSignUp() {
-    setLoading(true);
-    const { data: { session }, error } = await supabase.auth.signUp({
-      email,
-      password,
-    });
-
-    if (error) {
-      Alert.alert("Sign Up Error", error.message);
-    } else if (session) {
-      router.push("/loginNext");
-    }
-    setLoading(false);
-  }
-
-  // --- Logic: Profile Check ---
-  const checkProfileStatus = async (userId: string) => {
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("completed")
-      .eq("id", userId)
-      .single();
-
-    if (error) {
-      console.log(error)
-    }
-
-    if (data?.completed) {
-      router.replace("/homeScreen");
-    } else {
-      router.push("/loginNext");
     }
   };
 
