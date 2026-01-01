@@ -31,14 +31,20 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [userData, setUserData] = useState<userData | null>(null);
 
+  const verifyEmail = () => {
+    const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    return emailPattern.test(email);
+  };
+
   // Handles users signing in with email and password
   async function handleSignIn() {
     // set loading to true while signing in (disables button)
     setLoading(true);
+    const cleanEmail = email.trim().toLowerCase();
 
     // use supabase auth to sign in with email and password
     const { error } = await supabase.auth.signInWithPassword({
-      email: email,
+      email: cleanEmail,
       password: password,
     });
 
@@ -59,6 +65,13 @@ const Login = () => {
   async function signUpWithEmail() {
     // set loading to true while signing up (disables button)
     setLoading(true);
+
+    const isTrueEmail = verifyEmail();
+
+    if(!isTrueEmail){
+      Alert.alert("Invalid email, please provide a real email");
+      return;
+    }
 
     // use supabase auth to sign up with email and password
     const {
@@ -88,7 +101,7 @@ const Login = () => {
       const { data, error } = await supabase
         .from("profiles")
         .select()
-        .eq("email", email);
+        .ilike("email", email);
 
       // if there's an error during fetching, show alert with error message
       if (error) {
@@ -138,7 +151,6 @@ const Login = () => {
     }
   };
 
-
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Create An Account</Text>
@@ -147,7 +159,7 @@ const Login = () => {
         <Input
           label="Email"
           leftIcon={{ type: "font-awesome", name: "envelope" }}
-          onChangeText={(text) => setEmail(text)}
+          onChangeText={(text) => setEmail(text.toLowerCase())}
           value={email}
           placeholder="email@address.com"
           autoCapitalize={"none"}

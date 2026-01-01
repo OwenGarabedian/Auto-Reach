@@ -5,12 +5,22 @@ import {
   Pressable,
   Platform,
   Alert,
+  Dimensions,
 } from "react-native";
 import React, { useState } from "react";
 import { Button, Input } from "@rneui/themed";
 import { supabase } from "../lib/supabase";
 import { router } from "expo-router/build/exports";
 import { useLocalSearchParams } from "expo-router"; 
+import { Circle, Svg } from 'react-native-svg'
+
+const { width, height } = Dimensions.get("screen"); 
+
+const SIZE = 80; // Size of the SVG container
+const STROKE_WIDTH = 5;
+const CENTER = SIZE / 2;
+const RADIUS = (SIZE - STROKE_WIDTH * 2) / 2;
+const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 
 const LoginNext = () => {
 
@@ -18,6 +28,10 @@ const LoginNext = () => {
   const [fullName, setFullName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // Set the progress percentage (e.g., 50% for this screen)
+  const progress = 0.5; 
+  const strokeDashoffset = CIRCUMFERENCE - (progress * CIRCUMFERENCE);
 
   const onPhoneNumberChange = (text: string) => {
     const numericValue = text.replace(/[^0-9]/g, '');
@@ -66,40 +80,63 @@ const LoginNext = () => {
   }
 
   return (
-    <View>
+    <View style={styles.container}>
       <Text style={styles.title}>Onboarding Form 1</Text>
-      <View>
-        <View style={[styles.verticallySpaced, styles.mt20]}>
-          <Input
-            onChangeText={(text) => setFullName(text)}
-            value={fullName}
-            placeholder="Full Name"
-            autoCapitalize={"none"}
-          />
-        </View>
-        <View style={styles.verticallySpaced}>
-          <Input
-            keyboardType="numeric"
-            onChangeText={(text) => onPhoneNumberChange(text)}
-            value={phoneNumber}
-            placeholder="Phone Number"
-          />
-        </View>
+      
+      <View style={styles.inputContainer}>
+        <Input
+          onChangeText={(text) => setFullName(text)}
+          value={fullName}
+          placeholder="Full Name"
+          autoCapitalize={"none"}
+        />
+        <Input
+          keyboardType="numeric"
+          onChangeText={(text) => onPhoneNumberChange(text)}
+          value={phoneNumber}
+          placeholder="Phone Number"
+        />
       </View>
 
-              <Text> the id is: {id}</Text>
+      {/* BUTTON WITH CIRCULAR PROGRESS */}
+      <View style={styles.buttonWrapper}>
+        <Svg width={SIZE} height={SIZE} style={styles.svg}>
+          {/* Background Circle (Gray track) */}
+          <Circle
+            cx={CENTER}
+            cy={CENTER}
+            r={RADIUS}
+            stroke="#E0E0E0"
+            strokeWidth={STROKE_WIDTH}
+            fill="none"
+          />
+          {/* Progress Circle (Colored) */}
+          <Circle
+            cx={CENTER}
+            cy={CENTER}
+            r={RADIUS}
+            stroke="#63a5d1"
+            strokeWidth={STROKE_WIDTH}
+            strokeDasharray={CIRCUMFERENCE}
+            strokeDashoffset={strokeDashoffset}
+            strokeLinecap="round"
+            fill="none"
+            transform={`rotate(-90 ${CENTER} ${CENTER})`} // Rotates to start at the top
+          />
+        </Svg>
 
-      <Pressable
-        onPress={handleSubmition}
-        disabled={loading}
-        style={({ pressed }) => [
-          styles.continueButton,
-          loading ? styles.dissabledcontinueButton : styles.continueButton,
-          pressed && !loading && styles.dissabledcontinueButton,
-        ]}
-      >
-        <Text>→</Text>
-      </Pressable>
+        <Pressable
+          onPress={handleSubmition}
+          disabled={loading}
+          style={({ pressed }) => [
+            styles.continueButton,
+            loading && styles.disabledButton,
+            pressed && !loading && styles.pressedButton,
+          ]}
+        >
+          <Text style={styles.buttonText}>→</Text>
+        </Pressable>
+      </View>
     </View>
   );
 };
@@ -107,62 +144,40 @@ const LoginNext = () => {
 export default LoginNext;
 
 const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: 'white' },
   title: {
     fontSize: 24,
     fontWeight: "900",
     textAlign: "center",
     marginTop: 50,
-    paddingTop: 20,
     letterSpacing: 1.1,
   },
+  inputContainer: { marginTop: 20, paddingHorizontal: 20 },
+  buttonWrapper: {
+    marginTop: 50,
+    width: SIZE,
+    height: SIZE,
+    alignSelf: "center",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  svg: {
+    position: "absolute", // Places the SVG behind the button
+  },
   continueButton: {
-    marginTop: 30,
-    backgroundColor: "#63a5d1ff",
-    justifyContent: "center",
-    alignItems: "center",
+    backgroundColor: "#63a5d1",
     width: 60,
     height: 60,
     borderRadius: 30,
-    alignSelf: "center",
-    ...Platform.select({
-      ios: {
-        shadowColor: "#868686ff",
-        shadowOffset: { width: 0, height: 5 },
-        shadowOpacity: 0.35,
-        shadowRadius: 15,
-      },
-      android: {
-        elevation: 12,
-      },
-    }),
-  },
-  dissabledcontinueButton: {
-    marginTop: 30,
-    backgroundColor: "#ff0000ff",
     justifyContent: "center",
     alignItems: "center",
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    alignSelf: "center",
+    zIndex: 1, // Ensures button is clickable over the SVG
     ...Platform.select({
-      ios: {
-        shadowColor: "#868686ff",
-        shadowOffset: { width: 0, height: 5 },
-        shadowOpacity: 0.35,
-        shadowRadius: 15,
-      },
-      android: {
-        elevation: 12,
-      },
+      ios: { shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 5 },
+      android: { elevation: 8 },
     }),
   },
-  verticallySpaced: {
-    paddingTop: 4,
-    paddingBottom: 4,
-    alignSelf: "stretch",
-  },
-  mt20: {
-    marginTop: 20,
-  },
+  disabledButton: { backgroundColor: "#ccc" },
+  pressedButton: { opacity: 0.7 },
+  buttonText: { color: "white", fontSize: 24, fontWeight: "bold" },
 });
