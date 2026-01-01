@@ -7,9 +7,9 @@ const { width } = Dimensions.get("screen");
 
 const SplashScreen = () => {
 
-    const handleLoginPress = () => {
+    const handleButtonPressed = () => {
         // Navigation is handled by the router from expo-router (use .push to navigate)
-        router.push('/login');
+        router.push('/onboardringForm1');
     };
 
     return (
@@ -24,7 +24,7 @@ const SplashScreen = () => {
 
             <View>
                 <Pressable
-                    onPress={handleLoginPress}
+                    onPress={handleButtonPressed}
                     style={({pressed}) => pressed ? styles.pressedButton : styles.buttonNormal}
                 >
                     <Text style={styles.buttonText}>Build Now</Text>

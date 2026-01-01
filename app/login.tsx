@@ -5,6 +5,7 @@ import { Button, Input } from "@rneui/themed";
 import { Dimensions, Platform, Pressable } from "react-native";
 import { router } from "expo-router";
 
+// Define the structure of user data fetched from the database
 interface userData {
   id: string;
   email: string;
@@ -21,37 +22,40 @@ interface userData {
 
 const { width } = Dimensions.get("screen");
 
-const Auth = () => {
+// Login screen
+const Login = () => {
+  // State variables for email, password, loading state, and user data
+  // (setting to defalult value and will be updated later)
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [userData, setUserData] = useState<userData | null>(null);
 
-  // Sign in existing user with email and password (like handle login)
-  async function signInWithEmail() {
-    // fetchTableValues();
-
+  // Handles users signing in with email and password
+  async function handleSignIn() {
+    // set loading to true while signing in (disables button)
     setLoading(true);
+
+    // use supabase auth to sign in with email and password
     const { error } = await supabase.auth.signInWithPassword({
       email: email,
       password: password,
     });
 
+    // if there's an error during sign in, show alert with error message(and turn off loading)
     if (error) Alert.alert(error.message);
     setLoading(false);
 
-    // if no error, user is signed in successfully -> bring to home screen
-
+    // fetch user data from 'profiles' table after signing in (find if profile is complete)
     fetchTableValues();
-
-    //   if(!error){
-    //     router.push('/homeScreen');
-    //   }
   }
 
-  // Sign up new user with email and password (like handle create account)
+  // Handles users signing up with a new email and password
   async function signUpWithEmail() {
+    // set loading to true while signing up (disables button)
     setLoading(true);
+
+    // use supabase auth to sign up with email and password
     const {
       data: { session },
       error,
@@ -60,8 +64,7 @@ const Auth = () => {
       password: password,
     });
 
-    // see if they user has a completed profile in 'profiles' table
-
+    // if there's an error during sign up, show alert with error message(and turn off loading)
     if (error) Alert.alert(error.message);
     setLoading(false);
 
@@ -72,39 +75,53 @@ const Auth = () => {
   }
 
   const fetchTableValues = async () => {
-    console.log("Fetching user data for email:", email);
 
     try {
+      // set loading to true while fetching data (disables button)
       setLoading(true);
 
-      // The .from() specifies the table name, and .select() fetches the data.
+      // fetch user data from 'profiles' table where email matches the entered email
       const { data, error } = await supabase
         .from("profiles")
         .select()
-        .eq("email", email); // Filter where the 'email' column equals the email entered by the user
+        .eq("email", email);
 
-      console.log("Fetched user data:", data);
-
+      // if there's an error during fetching, show alert with error message
       if (error) {
         Alert.alert("Error fetching user data: " + error.message);
       }
 
+      // if data is returned, set the userData state to the first item (there should only be one)
       if (data && data.length > 0) {
         setUserData(data[0]);
       } else {
         Alert.alert("No user data found for the provided email.");
       }
 
-      if (userData && userData.completed === false) {
-        // Navigate to profile completion page (where they have to fill out) -> look for what fields are missing
-        console.log("Navigating to correct profile info form");
-      }
     } catch (err) {
-      if (err) {
+      // catch any unexpected errors and show alert
         Alert.alert("Error fetching user data: " + err);
-      }
     } finally {
+      // turn off loading after fetching is done
       setLoading(false);
+    }
+  };
+
+  const handleRoutingBasedOnProfile = () => {
+    // if userData is null, return error and stop
+    if (!userData) {
+      Alert.alert("Error with routing: No userData")
+      return
+    }
+
+    // check if profile is complete based on 'completed' field
+    if (userData.completed) {
+      // if profile is complete, navigate to main app screen
+      router.push("/homeScreen");
+    } else {
+      // if profile is incomplete, navigate to onboarding form based on completion level
+      
+      // needs to be implimented(after forms are complete with known data that will be asked on each)
     }
   };
 
@@ -137,7 +154,7 @@ const Auth = () => {
         <Button
           title="Sign in"
           disabled={loading}
-          onPress={() => signInWithEmail()}
+          onPress={() => handleSignIn()}
         />
       </View>
       <View style={styles.verticallySpaced}>
@@ -152,7 +169,7 @@ const Auth = () => {
   );
 };
 
-export default Auth;
+export default Login;
 
 const styles = StyleSheet.create({
   container: {
