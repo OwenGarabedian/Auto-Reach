@@ -107,14 +107,14 @@ const LoginNext = () => {
         <Input
           onChangeText={(text) => setFullName(text)}
           value={fullName}
-          placeholder="Full Name"
+          placeholder="Your Business Name"
           autoCapitalize={"none"}
         />
         <Input
           keyboardType="numeric"
           onChangeText={(text) => onPhoneNumberChange(text)}
           value={phoneNumber}
-          placeholder="Phone Number"
+          placeholder=" Your Businesses Website URL"
         />
       </View>
 
