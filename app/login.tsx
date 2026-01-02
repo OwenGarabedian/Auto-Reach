@@ -159,7 +159,7 @@ const Login = () => {
         <Input
           label="Email"
           leftIcon={{ type: "font-awesome", name: "envelope" }}
-          onChangeText={(text) => setEmail(text.toLowerCase())}
+          onChangeText={(text) => setEmail(text)}
           value={email}
           placeholder="email@address.com"
           autoCapitalize={"none"}
