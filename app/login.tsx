@@ -62,7 +62,7 @@ const Login = () => {
   }
 
   // Handles users signing up with a new email and password
-  async function signUpWithEmail() {
+  async function handleSignUp() {
     // set loading to true while signing up (disables button)
     setLoading(true);
 
@@ -86,10 +86,8 @@ const Login = () => {
     if (error) Alert.alert(error.message);
     setLoading(false);
 
-    // if no error, user is signed up successfully -> bring to next form page (session is created if no error)
-    if (session) {
-      router.push("/loginNext");
-    }
+    const fetchedUserData = await fetchTableValues();
+    signUpRouter(fetchedUserData);
   }
 
   const fetchTableValues = async (): Promise<userData | null> => {
@@ -151,6 +149,20 @@ const Login = () => {
     }
   };
 
+  const signUpRouter = (userData: userData | null) => {
+    if (!userData) {
+      Alert.alert("Error with routing: No userData");
+      return;
+    }
+
+    router.push({
+        pathname: "/onboardingForm",
+        params: { id: userData.id },
+      });
+
+      return;
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Create An Account</Text>
@@ -187,7 +199,7 @@ const Login = () => {
         <Button
           title="Sign up"
           disabled={loading}
-          onPress={() => signUpWithEmail()}
+          onPress={() => handleSignUp()}
         />
       </View>
       <Text>User Data: [{JSON.stringify(userData)}]</Text>

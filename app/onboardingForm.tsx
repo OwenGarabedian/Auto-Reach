@@ -118,6 +118,8 @@ const LoginNext = () => {
         />
       </View>
 
+      <Text>{id}</Text>
+
       {/* BUTTON WITH CIRCULAR PROGRESS */}
       <View style={styles.buttonWrapper}>
         <Svg width={SIZE} height={SIZE} style={styles.svg}>

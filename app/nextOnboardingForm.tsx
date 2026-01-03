@@ -28,22 +28,22 @@ const CENTER = SIZE / 2;
 const RADIUS = (SIZE - STROKE_WIDTH * 2) / 2;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 
-// set the progress percentage (e.g., 33% for this screen)
+// set the progress percentage (e.g., 33% -> 66% for this screen)
 // creates the animatable version of Circle
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
 const LoginNext = () => {
   const { id } = useLocalSearchParams();
-  const [fullName, setFullName] = useState("");
-  const [phoneNumber, setPhoneNumber] = useState("");
+  const [businessName, setBusinessName] = useState("");
+  const [businessWebsite, setBusinessWebsite] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // sefines shared value starting at 0 (0%)
-  const progress = useSharedValue(0);
+  // sefines shared value starting at .33 (33%)
+  const progress = useSharedValue(0.33);
 
   useEffect(() => {
-    // animates to 0.33 (33%) when the component mounts
-    progress.value = withTiming(0.33, { duration: 1500 });
+    // animates to 0.66 (66%) when the component mounts
+    progress.value = withTiming(0.66, { duration: 1500 });
   }, []);
 
   // maps the shared value to SVG props
@@ -51,25 +51,20 @@ const LoginNext = () => {
     strokeDashoffset: CIRCUMFERENCE - progress.value * CIRCUMFERENCE,
   }));
 
-  const onPhoneNumberChange = (text: string) => {
-    const numericValue = text.replace(/[^0-9]/g, "");
-    setPhoneNumber(numericValue);
-  };
-
   // handles form submition
   async function handleSubmition() {
     try {
       setLoading(true);
 
-      if (fullName == "") {
-        Alert.alert("Please input your full name.");
+      if (businessName == "") {
+        Alert.alert("Please input your business name.");
 
         setLoading(false);
         return;
       }
 
-      if (phoneNumber.length !== 10) {
-        Alert.alert("Invalid phone number, please write it like 1234567890");
+      if (businessWebsite == "") {
+        Alert.alert("Invalid website, please input a valid Url");
 
         setLoading(false);
         return;
@@ -79,8 +74,8 @@ const LoginNext = () => {
         .from("profiles") // in progfile table
         .update({
           // provides an object with the fields and their new values
-          full_name: fullName,
-          phone_number: phoneNumber,
+          business_name: businessName,
+          website_url: businessWebsite,
         })
         .eq("id", id) // uses a filter to target the specific row
         .select(); // uses .select() to return the updated rows (incase I need them)
@@ -101,19 +96,18 @@ const LoginNext = () => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Onboarding Form 1</Text>
+      <Text style={styles.title}>Onboarding Form 2</Text>
 
       <View style={styles.inputContainer}>
         <Input
-          onChangeText={(text) => setFullName(text)}
-          value={fullName}
+          onChangeText={(text) => setBusinessName(text)}
+          value={businessName}
           placeholder="Your Business Name"
           autoCapitalize={"none"}
         />
         <Input
-          keyboardType="numeric"
-          onChangeText={(text) => onPhoneNumberChange(text)}
-          value={phoneNumber}
+          onChangeText={(text) => setBusinessWebsite(text)}
+          value={businessWebsite}
           placeholder=" Your Businesses Website URL"
         />
       </View>
