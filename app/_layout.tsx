@@ -10,6 +10,8 @@ export const Layout = () => {
             <Stack.Screen name="login" options={{ }} />
             <Stack.Screen name="onboardingForm" options={{ }} />
             <Stack.Screen name="nextOnboardingForm" options={{ }} />
+            <Stack.Screen name="adressOnboardingForm" options={{ }} />
+            <Stack.Screen name="purchaseTwilioNumber" options={{ }} />
         </Stack>
     );
 }

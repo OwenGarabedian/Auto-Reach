@@ -99,9 +99,9 @@ const onboardingForm2 = () => {
       progress.value = withTiming(1, { duration: 1000 });
       buttonTextChangeAnimation();
       
-      // Optional: Delay navigation so user sees the checkmark
+      
       setTimeout(() => {
-        // router.replace("/next-screen");
+        router.push("/purchaseTwilioNumber");
       }, 1500);
 
     } catch (error: any) {
@@ -113,7 +113,7 @@ const onboardingForm2 = () => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Onboarding Form 2</Text>
+      <Text style={styles.title}>Onboarding Form 3</Text>
 
       <View style={styles.inputContainer}>
         <Input
@@ -125,7 +125,7 @@ const onboardingForm2 = () => {
         <Input
           onChangeText={setCity}
           value={city}
-          placeholder="Your state"
+          placeholder="Your city"
           autoCapitalize="none"
         />
         <Input
@@ -137,7 +137,7 @@ const onboardingForm2 = () => {
         <Input
           onChangeText={setZip}
           value={zipCode}
-          placeholder="Your state"
+          placeholder="Your zipcode"
           autoCapitalize="none"
         />
       </View>

@@ -43,3 +43,6 @@ yarn-error.*
 # new files
 .env
 /lib/supabase.ts
+
+
+node_modules/
