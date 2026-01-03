@@ -83,11 +83,14 @@ const Login = () => {
     });
 
     // if there's an error during sign up, show alert with error message(and turn off loading)
-    if (error) Alert.alert(error.message);
+    if (error){
+    Alert.alert(error.message);
     setLoading(false);
-
-    const fetchedUserData = await fetchTableValues();
-    signUpRouter(fetchedUserData);
+    return
+    } else {
+      const fetchedUserData = await fetchTableValues();
+      signUpRouter(fetchedUserData); 
+    }
   }
 
   const fetchTableValues = async (): Promise<userData | null> => {

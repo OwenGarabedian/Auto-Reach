@@ -7,90 +7,81 @@ import {
   Alert,
   Dimensions,
 } from "react-native";
-import React, { useState } from "react";
-import { Button, Input } from "@rneui/themed";
+import React, { useState, useEffect } from "react";
+import { Input } from "@rneui/themed";
 import { supabase } from "../lib/supabase";
-import { router } from "expo-router/build/exports";
+import { router } from "expo-router"; // Fixed import
 import { useLocalSearchParams } from "expo-router";
 import Animated, {
   useSharedValue,
   useAnimatedProps,
   withTiming,
+  useAnimatedStyle,
+  runOnJS, // Required for state updates in callbacks
 } from "react-native-reanimated";
 import { Circle, Svg } from "react-native-svg";
-import { useEffect } from "react";
 
 const { width, height } = Dimensions.get("screen");
-
-const SIZE = 90; // Size of the SVG container
+const SIZE = 90;
 const STROKE_WIDTH = 6;
 const CENTER = SIZE / 2;
 const RADIUS = (SIZE - STROKE_WIDTH * 2) / 2;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 
-// set the progress percentage (e.g., 33% -> 66% for this screen)
-// creates the animatable version of Circle
+const buttonArrow = "→";
+
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
-const LoginNext = () => {
+const onboardingForm2 = () => {
   const { id } = useLocalSearchParams();
   const [businessName, setBusinessName] = useState("");
   const [businessWebsite, setBusinessWebsite] = useState("");
   const [loading, setLoading] = useState(false);
+  const [buttonText, setButtonText] = useState(buttonArrow);
 
-  // sefines shared value starting at .33 (33%)
-  const progress = useSharedValue(0.33);
+  const buttonTextOpacity = useSharedValue(1);
+  const progress = useSharedValue(0.25);
 
   useEffect(() => {
-    // animates to 0.66 (66%) when the component mounts
-    progress.value = withTiming(0.66, { duration: 1500 });
+    progress.value = withTiming(0.50, { duration: 1500 });
   }, []);
 
-  // maps the shared value to SVG props
   const animatedProps = useAnimatedProps(() => ({
     strokeDashoffset: CIRCUMFERENCE - progress.value * CIRCUMFERENCE,
   }));
 
-  // handles form submition
+  const animatedTextStyle = useAnimatedStyle(() => ({
+    opacity: buttonTextOpacity.value,
+  }));
+
   async function handleSubmition() {
     try {
+      if (!businessName || !businessWebsite) {
+        Alert.alert("Please fill in all fields.");
+        return;
+      }
+
       setLoading(true);
 
-      if (businessName == "") {
-        Alert.alert("Please input your business name.");
-
-        setLoading(false);
-        return;
-      }
-
-      if (businessWebsite == "") {
-        Alert.alert("Invalid website, please input a valid Url");
-
-        setLoading(false);
-        return;
-      }
-
       const { data, error } = await supabase
-        .from("profiles") // in progfile table
+        .from("profiles")
         .update({
-          // provides an object with the fields and their new values
           business_name: businessName,
           website_url: businessWebsite,
         })
-        .eq("id", id) // uses a filter to target the specific row
-        .select(); // uses .select() to return the updated rows (incase I need them)
+        .eq("id", id)
+        .select();
 
-      if (error) {
-        throw error;
-      }
-      router.push("/nextOnboardingForm");
+      if (error) throw error;
 
-
-      console.log("Profile updated successfully:", data);
-      return data;
-    } catch (error) {
-      console.error("Error updating profile:");
-      return;
+    } catch (error: any) {
+      Alert.alert("Update Error", error.message);
+    } finally {
+      router.push({
+        pathname: "/adressOnboardingForm",
+        params: { id: id },
+      });
+      setLoading(false);
     }
   }
 
@@ -100,22 +91,21 @@ const LoginNext = () => {
 
       <View style={styles.inputContainer}>
         <Input
-          onChangeText={(text) => setBusinessName(text)}
+          onChangeText={setBusinessName}
           value={businessName}
           placeholder="Your Business Name"
-          autoCapitalize={"none"}
+          autoCapitalize="none"
         />
         <Input
-          onChangeText={(text) => setBusinessWebsite(text)}
+          onChangeText={setBusinessWebsite}
           value={businessWebsite}
-          placeholder=" Your Businesses Website URL"
+          placeholder="Your Business Website URL"
+          autoCapitalize="none"
         />
       </View>
 
-      {/* BUTTON WITH CIRCULAR PROGRESS */}
       <View style={styles.buttonWrapper}>
         <Svg width={SIZE} height={SIZE} style={styles.svg}>
-          {/* Background Circle (Gray track) */}
           <Circle
             cx={CENTER}
             cy={CENTER}
@@ -124,7 +114,6 @@ const LoginNext = () => {
             strokeWidth={STROKE_WIDTH}
             fill="none"
           />
-          {/* Progress Circle (Colored) */}
           <AnimatedCircle
             cx={CENTER}
             cy={CENTER}
@@ -132,7 +121,7 @@ const LoginNext = () => {
             stroke="#63a5d1"
             strokeWidth={STROKE_WIDTH}
             strokeDasharray={CIRCUMFERENCE}
-            animatedProps={animatedProps} //uses animated props
+            animatedProps={animatedProps}
             strokeLinecap="round"
             fill="none"
             transform={`rotate(-90 ${CENTER} ${CENTER})`}
@@ -155,7 +144,7 @@ const LoginNext = () => {
   );
 };
 
-export default LoginNext;
+export default onboardingForm2;
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "white" },
@@ -175,9 +164,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  svg: {
-    position: "absolute", // Places the SVG behind the button
-  },
+  svg: { position: "absolute" },
   continueButton: {
     backgroundColor: "#63a5d1",
     width: 60,
@@ -185,7 +172,7 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     justifyContent: "center",
     alignItems: "center",
-    zIndex: 1, // Ensures button is clickable over the SVG
+    zIndex: 1,
     ...Platform.select({
       ios: {
         shadowColor: "#000",

@@ -7,127 +7,143 @@ import {
   Alert,
   Dimensions,
 } from "react-native";
-import React, { useState } from "react";
-import { Button, Input } from "@rneui/themed";
+import React, { useState, useEffect } from "react";
+import { Input } from "@rneui/themed";
 import { supabase } from "../lib/supabase";
-import { router } from "expo-router/build/exports";
+import { router } from "expo-router"; // Fixed import
 import { useLocalSearchParams } from "expo-router";
 import Animated, {
   useSharedValue,
   useAnimatedProps,
   withTiming,
+  useAnimatedStyle,
+  runOnJS, // Required for state updates in callbacks
 } from "react-native-reanimated";
 import { Circle, Svg } from "react-native-svg";
-import { useEffect } from "react";
 
 const { width, height } = Dimensions.get("screen");
-
-const SIZE = 90; // Size of the SVG container
+const SIZE = 90;
 const STROKE_WIDTH = 6;
 const CENTER = SIZE / 2;
 const RADIUS = (SIZE - STROKE_WIDTH * 2) / 2;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 
-// set the progress percentage (e.g., 20% for this screen)
-// creates the animatable version of Circle
+const buttonArrow = "→";
+const buttonCheck = "✓";
+
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
-const onboardingFrom1 = () => {
+const onboardingForm2 = () => {
   const { id } = useLocalSearchParams();
-  const [fullName, setFullName] = useState("");
-  const [phoneNumber, setPhoneNumber] = useState("");
+  const [street, setStreet] = useState("");
+  const [city, setCity] = useState("");
+  const [state, setState] = useState("");
+  const [zipCode, setZip] = useState("");
   const [loading, setLoading] = useState(false);
+  const [buttonText, setButtonText] = useState(buttonArrow);
 
-  // sefines shared value starting at 0 (0%)
-  const progress = useSharedValue(0);
+  const buttonTextOpacity = useSharedValue(1);
+  const progress = useSharedValue(0.50);
 
   useEffect(() => {
-    // animates to 0.25 (25%) when the component mounts
-    progress.value = withTiming(0.25, { duration: 1500 });
+    progress.value = withTiming(0.75, { duration: 1500 });
   }, []);
 
-  // maps the shared value to SVG props
   const animatedProps = useAnimatedProps(() => ({
     strokeDashoffset: CIRCUMFERENCE - progress.value * CIRCUMFERENCE,
   }));
 
-  const onPhoneNumberChange = (text: string) => {
-    const numericValue = text.replace(/[^0-9]/g, "");
-    setPhoneNumber(numericValue);
+  const animatedTextStyle = useAnimatedStyle(() => ({
+    opacity: buttonTextOpacity.value,
+  }));
+
+  // Helper function to safely update state from the animation thread
+  const updateButtonText = () => {
+    setButtonText(buttonCheck);
   };
 
-  // handles form submition
+  const buttonTextChangeAnimation = () => {
+    // 1. Fade out the arrow
+    buttonTextOpacity.value = withTiming(0, { duration: 300 }, (finished) => {
+      if (finished) {
+        // 2. Switch text on the JS thread
+        runOnJS(updateButtonText)();
+        // 3. Fade back in
+        buttonTextOpacity.value = withTiming(1, { duration: 300 });
+      }
+    });
+  };
+
   async function handleSubmition() {
     try {
+      if (!street || !city || !state || !zipCode) {
+        Alert.alert("Please fill in all fields.");
+        return;
+      }
+
       setLoading(true);
 
-      if (fullName == "") {
-        Alert.alert("Please input your full name.");
-
-        setLoading(false);
-        return;
-      }
-
-      if (phoneNumber.length !== 10) {
-        Alert.alert("Invalid phone number, please write it like 1234567890");
-
-        setLoading(false);
-        return;
-      }
-
       const { data, error } = await supabase
-        .from("profiles") // in progfile table
+        .from("profiles")
         .update({
-          // provides an object with the fields and their new values
-          full_name: fullName,
-          phone_number: phoneNumber,
+          street: street,
+          city: city,
+          state: state,
+          zipcode: zipCode,
         })
-        .eq("id", id) // uses a filter to target the specific row
-        .select(); // uses .select() to return the updated rows (incase I need them)
+        .eq("id", id)
+        .select();
 
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
 
-      console.log("Profile updated successfully:", data);
-      return data;
-    } catch (error) {
-      console.error("Error updating profile:");
-      return;
+      progress.value = withTiming(1, { duration: 1000 });
+      buttonTextChangeAnimation();
+      
+      // Optional: Delay navigation so user sees the checkmark
+      setTimeout(() => {
+        // router.replace("/next-screen");
+      }, 1500);
+
+    } catch (error: any) {
+      Alert.alert("Update Error", error.message);
     } finally {
-      router.push({
-        pathname: "/nextOnboardingForm",
-        params: { id: id },
-      });
       setLoading(false);
     }
   }
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Onboarding Form 1</Text>
+      <Text style={styles.title}>Onboarding Form 2</Text>
 
       <View style={styles.inputContainer}>
         <Input
-          onChangeText={(text) => setFullName(text)}
-          value={fullName}
-          placeholder="Full Name"
-          autoCapitalize={"none"}
+          onChangeText={setStreet}
+          value={street}
+          placeholder="Your adress"
+          autoCapitalize="none"
         />
         <Input
-          keyboardType="numeric"
-          onChangeText={(text) => onPhoneNumberChange(text)}
-          value={phoneNumber}
-          placeholder="Phone Number"
+          onChangeText={setCity}
+          value={city}
+          placeholder="Your state"
+          autoCapitalize="none"
+        />
+        <Input
+          onChangeText={setState}
+          value={state}
+          placeholder="Your state"
+          autoCapitalize="none"
+        />
+        <Input
+          onChangeText={setZip}
+          value={zipCode}
+          placeholder="Your state"
+          autoCapitalize="none"
         />
       </View>
 
-      <Text>{id}</Text>
-
-      {/* BUTTON WITH CIRCULAR PROGRESS */}
       <View style={styles.buttonWrapper}>
         <Svg width={SIZE} height={SIZE} style={styles.svg}>
-          {/* Background Circle (Gray track) */}
           <Circle
             cx={CENTER}
             cy={CENTER}
@@ -136,7 +152,6 @@ const onboardingFrom1 = () => {
             strokeWidth={STROKE_WIDTH}
             fill="none"
           />
-          {/* Progress Circle (Colored) */}
           <AnimatedCircle
             cx={CENTER}
             cy={CENTER}
@@ -144,7 +159,7 @@ const onboardingFrom1 = () => {
             stroke="#63a5d1"
             strokeWidth={STROKE_WIDTH}
             strokeDasharray={CIRCUMFERENCE}
-            animatedProps={animatedProps} //uses animated props
+            animatedProps={animatedProps}
             strokeLinecap="round"
             fill="none"
             transform={`rotate(-90 ${CENTER} ${CENTER})`}
@@ -160,14 +175,16 @@ const onboardingFrom1 = () => {
             pressed && !loading && styles.pressedButton,
           ]}
         >
-          <Text style={styles.buttonText}>→</Text>
+          <Animated.Text style={[styles.buttonText, animatedTextStyle]}>
+            {buttonText}
+          </Animated.Text>
         </Pressable>
       </View>
     </View>
   );
 };
 
-export default onboardingFrom1;
+export default onboardingForm2;
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "white" },
@@ -187,9 +204,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  svg: {
-    position: "absolute", // Places the SVG behind the button
-  },
+  svg: { position: "absolute" },
   continueButton: {
     backgroundColor: "#63a5d1",
     width: 60,
@@ -197,7 +212,7 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     justifyContent: "center",
     alignItems: "center",
-    zIndex: 1, // Ensures button is clickable over the SVG
+    zIndex: 1,
     ...Platform.select({
       ios: {
         shadowColor: "#000",
