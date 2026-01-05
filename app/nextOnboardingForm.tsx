@@ -1,5 +1,5 @@
 import {
-  Text,
+  Text
   View,
   StyleSheet,
   Pressable,

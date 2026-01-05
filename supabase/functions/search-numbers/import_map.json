@@ -1,5 +1,5 @@
 {
   "imports": {
-    "twilio": "https://esm.sh/twilio@4.19.0"
+    "Twilio": "https://esm.sh/twilio@4.19.0"
   }
 }

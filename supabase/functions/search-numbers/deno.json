@@ -1,3 +1,6 @@
 {
-  "imports": {}
+  "imports": {
+    "twilio": "npm:twilio@^4.23.0",
+    "deno.land": "deno.land"
+  }
 }
